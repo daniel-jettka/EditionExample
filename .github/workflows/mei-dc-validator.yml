@@ -33,7 +33,7 @@ jobs:
           wget -q https://github.com/Saxonica/Saxon-HE/releases/download/SaxonHE12-9/SaxonHE12-9J.zip
           unzip -q SaxonHE12-9J.zip
 
-          echo "$(ls -al SaxonHE12-9/)" # Debug: List contents of the Saxon directory
+          echo "$(ls -al)" # Debug: List contents of the Saxon directory
           
           # Verify the jar exists
           if [ ! -f "SaxonHE12-9/saxon-he-12.9.jar" ]; then
