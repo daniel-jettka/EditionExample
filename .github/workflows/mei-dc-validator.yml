@@ -1,10 +1,16 @@
-name: Schematron Validation
+name: Schematron Validation (MEI DC)
 
 on:
   push:
-    branches: [ main, develop ]
+    # Run on pushes to main or develop branches
+    branches: 
+      - main
+      - develop
   pull_request:
-    branches: [ main, develop ]
+    # Run on PRs targeting main or develop branches
+    branches: 
+      - main
+      - develop
 
 jobs:
   validate-schematron:
@@ -14,20 +20,14 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install Saxon-HE (Java-based Schematron processor)
+      - name: Create Report Directory
         run: |
-          sudo apt-get update
-          sudo apt-get install -y default-jre-headless
-          # Download Saxon-HE (Java Edition)
-          wget -q https://www.saxonica.com/downloads/Saxon-HE12.4.zip
-          unzip -q Saxon-HE12.4.zip
-          chmod +x Saxon-HE12.4/saxon-he-12.4.jar
+          mkdir -p .github/workflow-reports
 
       - name: Find all XML files
         id: find-xml
         run: |
-          # Find all .xml files, excluding .github and vendor folders if needed
-          # Output as a newline-separated list
+          # Find all .xml files, excluding common ignored paths
           find . -type f -name "*.xml" \
             ! -path "./.github/*" \
             ! -path "./vendor/*" \
@@ -35,36 +35,41 @@ jobs:
             ! -name "*.xml.bak" \
             > xml_files.txt
           
-          echo "Found $(wc -l < xml_files.txt) XML files."
+          count=$(wc -l < xml_files.txt)
+          echo "Found $count XML files."
+          echo "count=$count" >> $GITHUB_OUTPUT
 
-      - name: Run Schematron Validation
+      - name: Run Schematron Validation (via Docker)
         id: validation
         env:
-          SCHEMATRON_FILE: "mei-metadata-toolkit/schema/mei-dc.sch"
-          OUTPUT_FILE: ".github/workflow-reports/mei-dc-validation_report.txt"
+          # The specific path to your Schematron file
+          SCHEMATRON_FILE: "mei-metadata-toolkit/src/schema/mei-dc.sch"
+          # The specific path for the output report
+          REPORT_FILE: ".github/workflow-reports/mei-dc-validation_report.txt"
         run: |
-          Saxon_JAR="Saxon-HE12.4/saxon-he-12.4.jar"
-          SCHEMATRON="$SCHEMATRON_FILE"
-          REPORT="$OUTPUT_FILE"
+          REPORT="$REPORT_FILE"
           
-          # Initialize report
+          # Initialize the report
           echo "### Schematron Validation Report" > "$REPORT"
+          echo "Branch: ${{ github.ref_name }}" >> "$REPORT"
+          echo "Schema: $SCHEMATRON_FILE" >> "$REPORT"
           echo "" >> "$REPORT"
           
           ALL_SUCCESS=true
           
-          # Read file list and process each
+          # Read the list of files and validate each one using the Saxon Docker container
           while IFS= read -r file; do
-            # Skip empty lines
             [ -z "$file" ] && continue
             
             echo "Validating: $file" >> "$REPORT"
             
-            # Run Schematron
+            # Run Saxon via Docker
+            # Mounts the current workspace to /work inside the container
             # -s: source file, -schematron: the schema file
-            # We capture stderr (errors) and stdout (warnings)
-            # Saxon returns exit code 0 if valid, non-zero if errors
-            output=$(java -jar "$Saxon_JAR" -s="$file" -schematron="$SCHEMATRON" 2>&1)
+            output=$(docker run --rm -v "${{ github.workspace }}:/work" saxonica/saxon-he:12.4 \
+              -s=/work/$file \
+              -schematron=/work/$SCHEMATRON_FILE 2>&1)
+            
             exit_code=$?
             
             if [ $exit_code -eq 0 ]; then
@@ -82,27 +87,27 @@ jobs:
           # Final Summary
           echo "### Summary" >> "$REPORT"
           if [ "$ALL_SUCCESS" = true ]; then
-            echo "✅ All XML files validated successfully." >> "$REPORT"
-            echo "Exit Code: 0" >> "$REPORT"
+            echo "✅ All XML files validated successfully against $SCHEMATRON_FILE." >> "$REPORT"
           else
             echo "❌ One or more XML files failed validation." >> "$REPORT"
-            echo "Exit Code: 1" >> "$REPORT"
           fi
 
-      - name: Upload Validation Report (Optional)
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: schematron-report
-          path: .github/workflow-reports/mei-dc-validation_report.txt
+          # Output the report content to the logs for visibility in the Action summary
+          echo "## Validation Report"
+          cat "$REPORT"
 
       - name: Fail if Validation Failed
-        # This step explicitly fails the workflow if the previous step set ALL_SUCCESS=false
-        # We parse the report to determine the exit code
         run: |
-          if grep -q "❌ One or more XML files failed validation" .github/workflow-reports/mei-dc-validation_report.txt; then
-            echo "Validation failed. Check the report for details."
+          if grep -q "❌ One or more XML files failed validation" "$REPORT_FILE"; then
+            echo "Validation failed. Check the report above and in the Artifacts."
             exit 1
           fi
           echo "Validation passed."
           exit 0
+
+      - name: Upload Validation Report as Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mei-dc-validation-report
+          path: .github/workflow-reports/mei-dc-validation_report.txt
