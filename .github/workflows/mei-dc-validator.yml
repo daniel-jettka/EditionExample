@@ -24,23 +24,29 @@ jobs:
 
       - name: Install Java and Saxon-HE
         run: |
-          # 1. Install Java Runtime (required to run the Saxon JAR)
+          echo "Installing Java..."
           sudo apt-get update
           sudo apt-get install -y default-jre-headless
-
-          # 2. Download Saxon-HE from the official GitHub Releases
-          wget -q https://github.com/Saxonica/Saxon-HE/releases/download/SaxonHE12-9/SaxonHE12-9J.zip
           
-          # 3. Unzip the archive
+          echo "Downloading Saxon-HE..."
+          # Using the 12.9 version as requested
+          wget -q https://github.com/Saxonica/Saxon-HE/releases/download/SaxonHE12-9/SaxonHE12-9J.zip
           unzip -q SaxonHE12-9J.zip
           
-          # 4. Set the path to the JAR file in the environment
-          # The directory created is usually named "SaxonHE12-9"
+          # Verify the jar exists
+          if [ ! -f "SaxonHE12-9/SaxonHE12-9J.jar" ]; then
+            echo "Error: Saxon JAR not found after unzip."
+            exit 1
+          fi
+          
           echo "SAXON_JAR=$(pwd)/SaxonHE12-9/SaxonHE12-9J.jar" >> $GITHUB_ENV
+          echo "Java Version:"
+          java -version
 
       - name: Find all XML files
         id: find-xml
         run: |
+          # Ensure we find files in the current directory and subdirectories
           find . -type f -name "*.xml" \
             ! -path "./.github/*" \
             ! -path "./vendor/*" \
@@ -51,13 +57,15 @@ jobs:
           count=$(wc -l < xml_files.txt)
           echo "Found $count XML files."
           echo "count=$count" >> $GITHUB_OUTPUT
+          
+          # Debug: Show the first few files found
+          echo "First 5 files found:"
+          head -n 5 xml_files.txt
 
       - name: Run Schematron Validation
         id: validation
         env:
-          # Your specific Schematron file path
           SCHEMATRON_FILE: "mei-metadata-toolkit/src/schema/mei-dc.sch"
-          # Your specific Report file path
           REPORT_FILE: ".github/workflow-reports/mei-dc-validation_report.txt"
         run: |
           REPORT="$REPORT_FILE"
@@ -66,37 +74,58 @@ jobs:
           echo "### Schematron Validation Report" > "$REPORT"
           echo "Branch: ${{ github.ref_name }}" >> "$REPORT"
           echo "Schema: $SCHEMATRON_FILE" >> "$REPORT"
+          echo "Generated: $(date)" >> "$REPORT"
           echo "" >> "$REPORT"
           
           ALL_SUCCESS=true
-          
-          # Iterate through every XML file found
+          TOTAL_FILES=0
+          PASSED_FILES=0
+          FAILED_FILES=0
+
+          # Read the file list
           while IFS= read -r file; do
+            # Skip empty lines
             [ -z "$file" ] && continue
             
+            TOTAL_FILES=$((TOTAL_FILES + 1))
+            echo "Processing file $TOTAL_FILES/$TOTAL_FILES: $file"
+            
+            # Check if the file actually exists on disk (safety check)
+            if [ ! -f "$file" ]; then
+              echo "  ⚠️  Warning: File $file not found on disk. Skipping." >> "$REPORT"
+              continue
+            fi
+
             echo "Validating: $file" >> "$REPORT"
             
-            # Run Saxon-HE
-            # -s: Source XML file
-            # -schematron: The Schematron schema file
-            # 2>&1: Capture both stdout and stderr
+            # Run Saxon
+            # We use 'set +e' temporarily to allow the command to fail without stopping the script
+            set +e
             output=$(java -jar "$SAXON_JAR" -s="$file" -schematron="$SCHEMATRON_FILE" 2>&1)
             exit_code=$?
+            set -e
             
             if [ $exit_code -eq 0 ]; then
               echo "  ✅ Status: PASSED" >> "$REPORT"
               echo "" >> "$REPORT"
+              PASSED_FILES=$((PASSED_FILES + 1))
             else
               ALL_SUCCESS=false
               echo "  ❌ Status: FAILED" >> "$REPORT"
               echo "  --- Error Messages ---" >> "$REPORT"
+              # Print the error output
               echo "$output" >> "$REPORT"
               echo "" >> "$REPORT"
+              FAILED_FILES=$((FAILED_FILES + 1))
             fi
           done < xml_files.txt
 
           # Final Summary
           echo "### Summary" >> "$REPORT"
+          echo "Total Files: $TOTAL_FILES" >> "$REPORT"
+          echo "Passed: $PASSED_FILES" >> "$REPORT"
+          echo "Failed: $FAILED_FILES" >> "$REPORT"
+          
           if [ "$ALL_SUCCESS" = true ]; then
             echo "✅ All XML files validated successfully." >> "$REPORT"
           else
@@ -110,7 +139,7 @@ jobs:
       - name: Fail if Validation Failed
         run: |
           if grep -q "❌ One or more XML files failed validation" "$REPORT_FILE"; then
-            echo "Validation failed. Check the report above."
+            echo "Validation failed."
             exit 1
           fi
           echo "Validation passed."
