@@ -3,12 +3,12 @@ name: Schematron Validation (MEI DC)
 on:
   push:
     branches: 
+      - ftr/metadata-validation-and-generation
       - main
-      - develop
   pull_request:
     branches: 
+      - ftr/metadata-validation-and-generation
       - main
-      - develop
 
 jobs:
   validate-schematron:
@@ -24,19 +24,26 @@ jobs:
 
       - name: Install Java and Saxon-HE
         run: |
-          # 1. Install Java Runtime (required to run the Saxon JAR)
+          echo "Installing Java..."
           sudo apt-get update
           sudo apt-get install -y default-jre-headless
-
-          # 2. Download Saxon-HE from the official GitHub Releases
+          
+          echo "Downloading Saxon-HE..."
+          # Using the 12.9 version as requested
           wget -q https://github.com/Saxonica/Saxon-HE/releases/download/SaxonHE12-9/SaxonHE12-9J.zip
-          
-          # 3. Unzip the archive
           unzip -q SaxonHE12-9J.zip
+
+          echo "$(ls -al SaxonHE12-9/)" # Debug: List contents of the Saxon directory
           
-          # 4. Set the path to the JAR file in the environment
-          # The directory created is usually named "SaxonHE12-9"
-          echo "SAXON_JAR=$(pwd)/SaxonHE12-9/SaxonHE12-9J.jar" >> $GITHUB_ENV
+          # Verify the jar exists
+          if [ ! -f "SaxonHE12-9/saxon-he-12.9.jar" ]; then
+            echo "Error: Saxon JAR not found after unzip."
+            exit 1
+          fi
+          
+          echo "SAXON_JAR=$(pwd)/SaxonHE12-9/saxon-he-12.9.jar" >> $GITHUB_ENV
+          echo "Java Version:"
+          java -version
 
       - name: Find all XML files
         id: find-xml
@@ -55,9 +62,7 @@ jobs:
       - name: Run Schematron Validation
         id: validation
         env:
-          # Your specific Schematron file path
           SCHEMATRON_FILE: "mei-metadata-toolkit/src/schema/mei-dc.sch"
-          # Your specific Report file path
           REPORT_FILE: ".github/workflow-reports/mei-dc-validation_report.md"
         run: |
           REPORT="$REPORT_FILE"
@@ -66,14 +71,27 @@ jobs:
           echo "### Schematron Validation Report" > "$REPORT"
           echo "Branch: ${{ github.ref_name }}" >> "$REPORT"
           echo "Schema: $SCHEMATRON_FILE" >> "$REPORT"
+          echo "Generated: $(date)" >> "$REPORT"
           echo "" >> "$REPORT"
           
           ALL_SUCCESS=true
-          
-          # Iterate through every XML file found
+          TOTAL_FILES=0
+          PASSED_FILES=0
+          FAILED_FILES=0
+
+          # Read the file list
           while IFS= read -r file; do
             [ -z "$file" ] && continue
             
+            TOTAL_FILES=$((TOTAL_FILES + 1))
+            echo "Processing file $TOTAL_FILES/$TOTAL_FILES: $file"
+            
+            # Check if the file actually exists on disk (safety check)
+            if [ ! -f "$file" ]; then
+              echo "  ⚠️  Warning: File $file not found on disk. Skipping." >> "$REPORT"
+              continue
+            fi
+
             echo "Validating: $file" >> "$REPORT"
             
             # Run Saxon-HE
@@ -82,21 +100,29 @@ jobs:
             # 2>&1: Capture both stdout and stderr
             output=$(java -jar "$SAXON_JAR" -s="$file" -schematron="$SCHEMATRON_FILE" 2>&1)
             exit_code=$?
+            set -e
             
             if [ $exit_code -eq 0 ]; then
               echo "  ✅ Status: PASSED" >> "$REPORT"
               echo "" >> "$REPORT"
+              PASSED_FILES=$((PASSED_FILES + 1))
             else
               ALL_SUCCESS=false
               echo "  ❌ Status: FAILED" >> "$REPORT"
               echo "  --- Error Messages ---" >> "$REPORT"
+              # Print the error output
               echo "$output" >> "$REPORT"
               echo "" >> "$REPORT"
+              FAILED_FILES=$((FAILED_FILES + 1))
             fi
           done < xml_files.txt
 
           # Final Summary
           echo "### Summary" >> "$REPORT"
+          echo "Total Files: $TOTAL_FILES" >> "$REPORT"
+          echo "Passed: $PASSED_FILES" >> "$REPORT"
+          echo "Failed: $FAILED_FILES" >> "$REPORT"
+          
           if [ "$ALL_SUCCESS" = true ]; then
             echo "✅ All XML files validated successfully." >> "$REPORT"
           else
