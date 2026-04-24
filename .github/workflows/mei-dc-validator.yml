@@ -1,0 +1,108 @@
+name: Schematron Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  validate-schematron:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Saxon-HE (Java-based Schematron processor)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y default-jre-headless
+          # Download Saxon-HE (Java Edition)
+          wget -q https://www.saxonica.com/downloads/Saxon-HE12.4.zip
+          unzip -q Saxon-HE12.4.zip
+          chmod +x Saxon-HE12.4/saxon-he-12.4.jar
+
+      - name: Find all XML files
+        id: find-xml
+        run: |
+          # Find all .xml files, excluding .github and vendor folders if needed
+          # Output as a newline-separated list
+          find . -type f -name "*.xml" \
+            ! -path "./.github/*" \
+            ! -path "./vendor/*" \
+            ! -path "./.git/*" \
+            ! -name "*.xml.bak" \
+            > xml_files.txt
+          
+          echo "Found $(wc -l < xml_files.txt) XML files."
+
+      - name: Run Schematron Validation
+        id: validation
+        env:
+          SCHEMATRON_FILE: "mei-metadata-toolkit/schema/mei-dc.sch"
+          OUTPUT_FILE: ".github/workflow-reports/mei-dc-validation_report.txt"
+        run: |
+          Saxon_JAR="Saxon-HE12.4/saxon-he-12.4.jar"
+          SCHEMATRON="$SCHEMATRON_FILE"
+          REPORT="$OUTPUT_FILE"
+          
+          # Initialize report
+          echo "### Schematron Validation Report" > "$REPORT"
+          echo "" >> "$REPORT"
+          
+          ALL_SUCCESS=true
+          
+          # Read file list and process each
+          while IFS= read -r file; do
+            # Skip empty lines
+            [ -z "$file" ] && continue
+            
+            echo "Validating: $file" >> "$REPORT"
+            
+            # Run Schematron
+            # -s: source file, -schematron: the schema file
+            # We capture stderr (errors) and stdout (warnings)
+            # Saxon returns exit code 0 if valid, non-zero if errors
+            output=$(java -jar "$Saxon_JAR" -s="$file" -schematron="$SCHEMATRON" 2>&1)
+            exit_code=$?
+            
+            if [ $exit_code -eq 0 ]; then
+              echo "  ✅ Status: PASSED" >> "$REPORT"
+              echo "" >> "$REPORT"
+            else
+              ALL_SUCCESS=false
+              echo "  ❌ Status: FAILED" >> "$REPORT"
+              echo "  --- Error Messages ---" >> "$REPORT"
+              echo "$output" >> "$REPORT"
+              echo "" >> "$REPORT"
+            fi
+          done < xml_files.txt
+
+          # Final Summary
+          echo "### Summary" >> "$REPORT"
+          if [ "$ALL_SUCCESS" = true ]; then
+            echo "✅ All XML files validated successfully." >> "$REPORT"
+            echo "Exit Code: 0" >> "$REPORT"
+          else
+            echo "❌ One or more XML files failed validation." >> "$REPORT"
+            echo "Exit Code: 1" >> "$REPORT"
+          fi
+
+      - name: Upload Validation Report (Optional)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: schematron-report
+          path: .github/workflow-reports/mei-dc-validation_report.txt
+
+      - name: Fail if Validation Failed
+        # This step explicitly fails the workflow if the previous step set ALL_SUCCESS=false
+        # We parse the report to determine the exit code
+        run: |
+          if grep -q "❌ One or more XML files failed validation" .github/workflow-reports/mei-dc-validation_report.txt; then
+            echo "Validation failed. Check the report for details."
+            exit 1
+          fi
+          echo "Validation passed."
+          exit 0
