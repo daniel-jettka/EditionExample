@@ -32,16 +32,14 @@ jobs:
           # Using the 12.9 version as requested
           wget -q https://github.com/Saxonica/Saxon-HE/releases/download/SaxonHE12-9/SaxonHE12-9J.zip
           unzip -q SaxonHE12-9J.zip
-
-          echo "$(ls -al)" # Debug: List contents of the Saxon directory
-          
+ 
           # Verify the jar exists
-          if [ ! -f "SaxonHE12-9/saxon-he-12.9.jar" ]; then
+          if [ ! -f "saxon-he-12.9.jar" ]; then
             echo "Error: Saxon JAR not found after unzip."
             exit 1
           fi
           
-          echo "SAXON_JAR=$(pwd)/SaxonHE12-9/saxon-he-12.9.jar" >> $GITHUB_ENV
+          echo "SAXON_JAR=$(pwd)/saxon-he-12.9.jar" >> $GITHUB_ENV
           echo "Java Version:"
           java -version
 
