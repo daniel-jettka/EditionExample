@@ -14,12 +14,12 @@
                 <!-- Kommentar blablabla -->
                 <navigatorCategory xml:id="navCategory-0" sortNo="1">
                     <names>
-                        <name xml:lang="de">Einführ</name>
+                        <name xml:lang="de">Einführung</name>
                         <name xml:lang="en">Introduction</name>
                     </names>
                     <navigatorItem xml:id="navItem-0-1" sortNo="1" targets="xmldb:exist:///db/apps/edirom/edition-example/content/startwindow.xml">
                         <names>
-                            <name xml:lang="de">Lies doch!</name>
+                            <name xml:lang="de">Lies mich!</name>
                             <name xml:lang="en">Read me!</name>
                         </names>
                     </navigatorItem>
