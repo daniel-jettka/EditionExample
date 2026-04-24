@@ -23,6 +23,18 @@
                             <name xml:lang="en">Read me!</name>
                         </names>
                     </navigatorItem>
+                    <navigatorItem xml:id="navItem-0-2" sortNo="1" targets="xmldb:exist:///db/apps/edirom/edition-example/content/texts/vorwort.html">
+                        <names>
+                            <name xml:lang="de">Vorwort</name>
+                            <name xml:lang="en">preface</name>
+                        </names>
+                    </navigatorItem>
+                    <navigatorItem xml:id="navItem-0-3" sortNo="3" targets="xmldb:exist:///db/apps/edirom/edition-example/content/texts/tei-test.xml">
+                        <names>
+                            <name xml:lang="de">TEI Testdatei</name>
+                            <name xml:lang="en">TEI test file</name>
+                        </names>
+                    </navigatorItem>
                 </navigatorCategory>
                 <navigatorCategory xml:id="navCategory-1" sortNo="2">
                     <names>
@@ -71,6 +83,20 @@
                         <names>
                             <name xml:lang="de">Neuedition (Ed)</name>
                             <name xml:lang="en">New edition (Ed)</name>
+                        </names>
+                    </navigatorItem>
+                </navigatorCategory>
+                <navigatorCategory xml:id="navCategory-4" sortNo="3">
+                    <names>
+                        <name xml:lang="de">Aufnahmen</name>
+                        <name xml:lang="en">Recordings</name>
+                    </names>
+                    <navigatorItem xml:id="navItem-4-1"
+                              sortNo="1"
+                              targets="xmldb:exist:///db/apps/edirom/edition-example/content/recordings/edirom_recording_1.xml">
+                        <names>
+                            <name xml:lang="de">Akkord Beispiele</name>
+                            <name xml:lang="en">Chord Samples</name>
                         </names>
                     </navigatorItem>
                 </navigatorCategory>
