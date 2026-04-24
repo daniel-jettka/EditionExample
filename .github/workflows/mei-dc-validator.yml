@@ -48,6 +48,9 @@ jobs:
           REPORT_FILE: ".github/workflow-reports/mei-dc-validation_report.txt"
         run: |
           REPORT="$REPORT_FILE"
+
+          # Pull Saxn-HE-12.4
+          docker pull saxonica/saxon-he:12.4
           
           # Initialize the report
           echo "### Schematron Validation Report" > "$REPORT"
