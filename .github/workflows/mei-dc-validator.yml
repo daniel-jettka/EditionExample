@@ -34,19 +34,18 @@ jobs:
           unzip -q SaxonHE12-9J.zip
           
           # Verify the jar exists
-          if [ ! -f "SaxonHE12-9/SaxonHE12-9J.jar" ]; then
+          if [ ! -f "SaxonHE12-9/saxon-he-12.9.jar" ]; then
             echo "Error: Saxon JAR not found after unzip."
             exit 1
           fi
           
-          echo "SAXON_JAR=$(pwd)/SaxonHE12-9/SaxonHE12-9J.jar" >> $GITHUB_ENV
+          echo "SAXON_JAR=$(pwd)/SaxonHE12-9/saxon-he-12.9.jar" >> $GITHUB_ENV
           echo "Java Version:"
           java -version
 
       - name: Find all XML files
         id: find-xml
         run: |
-          # Ensure we find files in the current directory and subdirectories
           find . -type f -name "*.xml" \
             ! -path "./.github/*" \
             ! -path "./vendor/*" \
@@ -57,16 +56,12 @@ jobs:
           count=$(wc -l < xml_files.txt)
           echo "Found $count XML files."
           echo "count=$count" >> $GITHUB_OUTPUT
-          
-          # Debug: Show the first few files found
-          echo "First 5 files found:"
-          head -n 5 xml_files.txt
 
       - name: Run Schematron Validation
         id: validation
         env:
           SCHEMATRON_FILE: "mei-metadata-toolkit/src/schema/mei-dc.sch"
-          REPORT_FILE: ".github/workflow-reports/mei-dc-validation_report.txt"
+          REPORT_FILE: ".github/workflow-reports/mei-dc-validation_report.md"
         run: |
           REPORT="$REPORT_FILE"
           
@@ -84,7 +79,6 @@ jobs:
 
           # Read the file list
           while IFS= read -r file; do
-            # Skip empty lines
             [ -z "$file" ] && continue
             
             TOTAL_FILES=$((TOTAL_FILES + 1))
@@ -98,9 +92,10 @@ jobs:
 
             echo "Validating: $file" >> "$REPORT"
             
-            # Run Saxon
-            # We use 'set +e' temporarily to allow the command to fail without stopping the script
-            set +e
+            # Run Saxon-HE
+            # -s: Source XML file
+            # -schematron: The Schematron schema file
+            # 2>&1: Capture both stdout and stderr
             output=$(java -jar "$SAXON_JAR" -s="$file" -schematron="$SCHEMATRON_FILE" 2>&1)
             exit_code=$?
             set -e
@@ -139,7 +134,7 @@ jobs:
       - name: Fail if Validation Failed
         run: |
           if grep -q "❌ One or more XML files failed validation" "$REPORT_FILE"; then
-            echo "Validation failed."
+            echo "Validation failed. Check the report above."
             exit 1
           fi
           echo "Validation passed."
@@ -150,4 +145,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mei-dc-validation-report
-          path: .github/workflow-reports/mei-dc-validation_report.txt
+          path: .github/workflow-reports/mei-dc-validation_report.md
