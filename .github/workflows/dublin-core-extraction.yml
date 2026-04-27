@@ -21,7 +21,7 @@ jobs:
 
       - name: Create necessary directories
         run: |
-          echo "$OUTPUT_DIR=$(pwd)/metadata/dc" >> $GITHUB_ENV
+          echo "OUTPUT_DIR=$(pwd)/metadata/dc" >> $GITHUB_ENV
           mkdir -p metadata/dc
 
       - name: Install Java and Saxon-HE
