@@ -66,7 +66,6 @@ jobs:
           path: .github/workflow-reports/mei-dc-validation_report.md
 
       - name: Commit and Push Report (Optional)
-          Uncomment the lines below if you want the report to be committed back to the repo
           run: |
             git config --local user.email "action@github.com"
             git config --local user.name "GitHub Action"
