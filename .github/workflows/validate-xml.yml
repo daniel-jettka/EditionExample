@@ -93,5 +93,6 @@ jobs:
         run: |
           # Find your XML files and loop through them
           find . -type f -name "*.xml" | while read file; do
-            python mei-metadata-toolkit/src/python/validate.py "$file" "mei-metadata-toolkit/src/schema/mei-dc.sch"
+            echo "Validating $file against MEI-DC Schematron..."
+            python ../mei-metadata-toolkit/src/python/validate.py "$file" "mei-metadata-toolkit/src/schema/mei-dc.sch"
           done
