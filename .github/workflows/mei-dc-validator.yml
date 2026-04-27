@@ -60,7 +60,7 @@ jobs:
       - name: Run Schematron Validation
         id: validation
         env:
-          SCHEMATRON_FILE: "mei-metadata-toolkit/src/schema/mei-dc.sch"
+          SCHEMATRON_FILE: "schema/mei-dc.sch"
           REPORT_FILE: ".github/workflow-reports/mei-dc-validation_report.md"
         run: |
           REPORT="$REPORT_FILE"
