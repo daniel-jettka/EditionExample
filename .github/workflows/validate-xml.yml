@@ -89,49 +89,9 @@ jobs:
           # Install the specific pyschematron tool requested
           pip install pyschematron
 
-          # Test if pyschematron-0.1.0 is installed correctly by trying with Python
-          run: |
-            python3 -c "from pyschematron import validate_document
-
-result = validate_document('build.xml', 'src/schema/mei-dc.sch')
-
-svrl = result.get_svrl()
-is_valid = result.is_valid()
-
-print('Validation Result:', 'Valid' if is_valid else 'Invalid')
-print('SVRL Output:', svrl)
-          
-
-      - name: Validate XML files with Schematron
+      - name: Validate XML against Schematron
         run: |
-
-          # 1. Create the output directory if it doesn't exist
-          mkdir -p .github/workflow-reports
-
-          # 2. Find all .xml files and write to a temporary list
-          # We use 'find' to get files, then 'sort' to make the list consistent
-          find . -type f -name "*.xml" | sort > /tmp/xml_files.txt
-
-          # 3. Check if any files were found
-          if [ -s /tmp/xml_files.txt ]; then
-            while IFS= read -r file; do
-              echo "Validating $file..."
-              # Run Schematron validation
-              # pyschematron-0.1.0 returns 0 on success, non-zero on failure
-              # We capture stderr to get the error message
-              output=$(pyschematron-0.1.0 -s "mei-metadata-toolkit/src/schema/mei-dc.sch" "$file" 2>&1)
-              exit_code=$?  
-              if [ $exit_code -eq 0 ]; then
-                echo "✅ $file passed validation."
-              else
-                echo "❌ $file failed validation."
-                echo "Error details:"
-                echo "$output"
-              fi
-            done < /tmp/xml_files.txt
-          else
-            echo "No XML files to validate."
-            echo "Error details:"
-            echo "$output"
-          fi
-
+          # Find your XML files and loop through them
+          find . -type f -name "*.xml" | while read file; do
+            python mei-metadata-toolkit/src/python/validate.py "$file" "mei-metadata-toolkit/src/schema/mei-dc.sch"
+          done
