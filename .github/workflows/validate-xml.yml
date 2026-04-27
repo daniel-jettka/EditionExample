@@ -1,0 +1,76 @@
+name: XML File Discovery and Report
+
+on:
+  # Trigger on push to main or any branch, or manually
+  push:
+    branches: 
+      - ftr/metadata-validation-and-generation
+      - main
+  pull_request:
+    branches: 
+      - ftr/metadata-validation-and-generation
+      - main
+  workflow_dispatch:
+
+jobs:
+  generate-xml-report:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Find all .xml files and generate report
+        run: |
+          # 1. Create the output directory if it doesn't exist
+          mkdir -p .github/workflow-reports
+
+          # 2. Find all .xml files and write to a temporary list
+          # We use 'find' to get files, then 'sort' to make the list consistent
+          find . -type f -name "*.xml" | sort > /tmp/xml_files.txt
+
+          # 3. Check if any files were found
+          if [ -s /tmp/xml_files.txt ]; then
+            # 4. Generate the Markdown report
+            {
+              echo "# MEI-DC XML Validation Report"
+              echo ""
+              echo "The following XML files were found in the repository:"
+              echo ""
+              echo "| File Path | Size (bytes) |"
+              echo "| :--- | :--- |"
+              
+              # Iterate through the list to add file size for extra context
+              while IFS= read -r file; do
+                # Get file size
+                size=$(stat -c%s "$file" 2>/dev/null || echo "0")
+                echo "| $file | $size |"
+              done < /tmp/xml_files.txt
+
+              echo ""
+              echo "Total files found: $(wc -l < /tmp/xml_files.txt)"
+            } > .github/workflow-reports/mei-dc-validation_report.md
+          else
+            # 5. Handle case where no files are found
+            {
+              echo "# MEI-DC XML Validation Report"
+              echo ""
+              echo "No `.xml` files were found in the repository."
+            } > .github/workflow-reports/mei-dc-validation_report.md
+          fi
+
+      - name: Upload Report as Artifact (Optional)
+        uses: actions/upload-artifact@v4
+        with:
+          name: xml-report
+          path: .github/workflow-reports/mei-dc-validation_report.md
+
+      - name: Commit and Push Report (Optional)
+        # Uncomment the lines below if you want the report to be committed back to the repo
+        # run: |
+        #   git config --local user.email "action@github.com"
+        #   git config --local user.name "GitHub Action"
+        #   git add .github/workflow-reports/mei-dc-validation_report.md
+        #   git commit -m "Update XML validation report" || echo "No changes to commit"
+        #   git push
+        #   # Note: The 'git push' step will fail in Pull Request workflows unless you use a specific token
