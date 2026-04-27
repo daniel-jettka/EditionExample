@@ -89,9 +89,9 @@ jobs:
           # Install the specific pyschematron tool requested
           pip install pyschematron
 
-          # Test if pyschematron is installed correctly
-          if ! command -v pyschematron &> /dev/null; then
-            echo "pyschematron could not be found. Please check the installation."
+          # Test if pyschematron-0.1.0 is installed correctly
+          if ! command -v pyschematron-0.1.0 &> /dev/null; then
+            echo "pyschematron-0.1.0 could not be found. Please check the installation."
             exit 1
           fi
 
@@ -110,9 +110,9 @@ jobs:
             while IFS= read -r file; do
               echo "Validating $file..."
               # Run Schematron validation
-              # pyschematron returns 0 on success, non-zero on failure
+              # pyschematron-0.1.0 returns 0 on success, non-zero on failure
               # We capture stderr to get the error message
-              output=$(pyschematron -s "mei-metadata-toolkit/src/schema/mei-dc.sch" "$file" 2>&1)
+              output=$(pyschematron-0.1.0 -s "mei-metadata-toolkit/src/schema/mei-dc.sch" "$file" 2>&1)
               exit_code=$?  
               if [ $exit_code -eq 0 ]; then
                 echo "✅ $file passed validation."
