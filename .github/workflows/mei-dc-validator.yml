@@ -18,6 +18,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v6
         with:
+          ref: ftr/metadata-validation-and-generation
           submodules: 'recursive' 
 
       - name: Create Report Directory
