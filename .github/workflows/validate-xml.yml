@@ -89,8 +89,12 @@ jobs:
           # Install the specific pyschematron tool requested
           pip install pyschematron
 
-          # Verify installation
-          pyschematron --version
+          # Test if pyschematron is installed correctly
+          if ! command -v pyschematron &> /dev/null; then
+            echo "pyschematron could not be found. Please check the installation."
+            exit 1
+          fi
+
       - name: Validate XML files with Schematron
         run: |
 
