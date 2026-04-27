@@ -49,27 +49,67 @@ jobs:
 
               echo ""
               echo "Total files found: $(wc -l < /tmp/xml_files.txt)"
-            } > .github/workflow-reports/mei-dc-validation_report.md
+            } > .github/workflow-reports/list-xml-files.md
           else
             # 5. Handle case where no files are found
             {
               echo "# MEI-DC XML Validation Report"
               echo ""
               echo "No `.xml` files were found in the repository."
-            } > .github/workflow-reports/mei-dc-validation_report.md
+            } > .github/workflow-reports/list-xml-files.md
           fi
 
       - name: Upload Report as Artifact (Optional)
         uses: actions/upload-artifact@v7
         with:
           name: xml-report
-          path: .github/workflow-reports/mei-dc-validation_report.md
+          path: .github/workflow-reports/list-xml-files.md
 
       - name: Commit and Push Report (Optional)
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add .github/workflow-reports/mei-dc-validation_report.md
+          git add .github/workflow-reports/list-xml-files.md
           git commit -m "Update XML validation report" || echo "No changes to commit"
           git push
           # Note: The 'git push' step will fail in Pull Request workflows unless you use a specific token
+
+  validate-xml-with-schematron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5 
+        with:
+          python-version: '3.11'
+      - name: Install Schematron Validation Tool
+        run: |
+          # Install the specific pyschematron tool requested
+          pip install pyschematron
+      - name: Validate XML files with Schematron
+        run: |
+          # Read the list of XML files from the previous step
+          if [ -f /tmp/xml_files.txt ]; then
+            while IFS= read -r file; do
+              echo "Validating $file..."
+              # Run Schematron validation
+              # pyschematron returns 0 on success, non-zero on failure
+              # We capture stderr to get the error message
+              output=$(pyschematron -s "mei-metadata-toolkit/src/schema/mei-dc.sch" "$file" 2>&1)
+              exit_code=$?  
+              if [ $exit_code -eq 0 ]; then
+                echo "✅ $file passed validation."
+              else
+                echo "❌ $file failed validation."
+                echo "Error details:"
+                echo "$output"
+              fi
+            done < /tmp/xml_files.txt
+          else
+            echo "No XML files to validate."
+            echo "Error details:"
+            echo "$output"
+          fi
+          
