@@ -89,11 +89,20 @@ jobs:
           # Install the specific pyschematron tool requested
           pip install pyschematron
 
-          # Test if pyschematron-0.1.0 is installed correctly
-          if ! command -v pyschematron-0.1.0 &> /dev/null; then
-            echo "pyschematron-0.1.0 could not be found. Please check the installation."
-            exit 1
-          fi
+          # Test if pyschematron-0.1.0 is installed correctly by trying with Python
+          run: |
+            python3 -c "
+            from pyschematron import validate_document
+
+            result = validate_document('build.xml', 'src/schema/mei-dc.sch')
+
+            svrl = result.get_svrl()
+            is_valid = result.is_valid()
+
+            print('Validation Result:', 'Valid' if is_valid else 'Invalid')
+            print('SVRL Output:', svrl)
+            "
+          
 
       - name: Validate XML files with Schematron
         run: |
