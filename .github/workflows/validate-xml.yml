@@ -82,6 +82,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          ref: ftr/metadata-validation-and-generation
+          submodules: 'recursive'
       
       - name: Set up Python
         uses: actions/setup-python@v5 
