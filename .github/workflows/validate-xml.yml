@@ -66,11 +66,11 @@ jobs:
           path: .github/workflow-reports/mei-dc-validation_report.md
 
       - name: Commit and Push Report (Optional)
-        # Uncomment the lines below if you want the report to be committed back to the repo
-        # run: |
-        #   git config --local user.email "action@github.com"
-        #   git config --local user.name "GitHub Action"
-        #   git add .github/workflow-reports/mei-dc-validation_report.md
-        #   git commit -m "Update XML validation report" || echo "No changes to commit"
-        #   git push
-        #   # Note: The 'git push' step will fail in Pull Request workflows unless you use a specific token
+          Uncomment the lines below if you want the report to be committed back to the repo
+          run: |
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git add .github/workflow-reports/mei-dc-validation_report.md
+            git commit -m "Update XML validation report" || echo "No changes to commit"
+            git push
+            # Note: The 'git push' step will fail in Pull Request workflows unless you use a specific token
