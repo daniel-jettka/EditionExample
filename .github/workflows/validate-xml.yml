@@ -93,8 +93,11 @@ jobs:
 
       - name: Validate XML against Schematron
         run: |
-          # get path to the Python script in the submodule
-          echo "PYTHON_SCRIPT_PATH=$(pwd)/mei-metadata-toolkit/src/python/validate.py" >> $GITHUB_ENV
+          # list contents of submodules to verify they are checked out
+          echo "Listing submodule contents for verification:"
+          echo "Submodule 1 (mei-metadata-toolkit):"
+          ls -la mei-metadata-toolkit
+
 
           # Find your XML files and loop through them
           find . -type f -name "*.xml" | while read file; do
