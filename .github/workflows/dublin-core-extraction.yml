@@ -48,7 +48,7 @@ jobs:
       - name: Find all XML files and extract Dublin Core metadata
         run: |
           # get stylesheet file from submodule dir
-          echo "STYLESHEET=$(pwd)/mei-metadata-toolkit/src/xsl/mei2dc.xsl" >> $GITHUB_ENV
+          echo "XSL=$(pwd)/mei-metadata-toolkit/src/xsl/mei2dc.xsl" >> $GITHUB_ENV
 
           find . -type f -name "*.xml" \
             ! -path "./.github/*" \
@@ -59,6 +59,6 @@ jobs:
 
           while IFS= read -r file; do
             echo "Processing $file for Dublin Core extraction..."
-            echo "java -jar $SAXON_JAR -o $OUTPUT_DIR/$(basename $file .xml)-dc.xml -s $file -xsl $STYLESHEET"
-            java -jar "$SAXON_JAR" -o:"$OUTPUT_DIR/$(basename "$file" .xml)-dc.xml" -s "$file" -xsl "$STYLESHEET"
+            echo "java -jar $SAXON_JAR -o:$OUTPUT_DIR/$(basename $file .xml)-dc.xml -s:$file -xsl:$XSL"
+            java -jar "$SAXON_JAR" -o:"$OUTPUT_DIR/$(basename "$file" .xml)-dc.xml" -s:"$file" -xsl:"$XSL"
           done < xml_files.txt
