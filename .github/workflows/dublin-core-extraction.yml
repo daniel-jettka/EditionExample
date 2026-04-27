@@ -1,0 +1,63 @@
+name: Extraction of Dublin Core Metadata from MEI Files
+on:
+  push:
+    branches: 
+      - ftr/metadata-validation-and-generation
+      - main
+  pull_request:
+    branches: 
+      - ftr/metadata-validation-and-generation
+      - main
+  workflow_dispatch:
+jobs:
+  extract-dublin-core:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+        with:
+          ref: ftr/metadata-validation-and-generation
+          submodules: 'recursive' 
+
+      - name: Create necessary directories
+        run: |
+          echo "$OUTPUT_DIR=$(pwd)/metadata/dc" >> $GITHUB_ENV
+          mkdir -p metadata/dc
+
+      - name: Install Java and Saxon-HE
+        run: |
+          echo "Installing Java..."
+          sudo apt-get update
+          sudo apt-get install -y default-jre-headless
+          
+          echo "Downloading Saxon-HE..."
+          # Using the 12.9 version as requested
+          wget -q https://github.com/Saxonica/Saxon-HE/releases/download/SaxonHE12-9/SaxonHE12-9J.zip
+          unzip -q SaxonHE12-9J.zip
+ 
+          # Verify the jar exists
+          if [ ! -f "saxon-he-12.9.jar" ]; then
+            echo "Error: Saxon JAR not found after unzip."
+            exit 1
+          fi
+          
+          echo "SAXON_JAR=$(pwd)/saxon-he-12.9.jar" >> $GITHUB_ENV
+          echo "Java Version:"
+          java -version
+
+      - name: Find all XML files and extract Dublin Core metadata
+        run: |
+          # get schematron file from submodule dir
+          echo "SCHEMATRON_FILE=$(pwd)/mei-metadata-toolkit/src/schema/mei-dc.sch" >> $GITHUB_ENV
+
+          find . -type f -name "*.xml" \
+            ! -path "./.github/*" \
+            ! -path "./vendor/*" \
+            ! -path "./.git/*" \
+            ! -name "*.xml.bak" \
+            > xml_files.txt
+
+          while IFS= read -r file; do
+            echo "Processing $file for Dublin Core extraction..."
+            java -jar "$SAXON_JAR" -s:"$file" -xsl:"$SCHEMATRON_FILE" -o:"$OUTPUT_DIR/$(basename "$file" .xml)-dc.xml"
+          done < xml_files.txt
