@@ -88,6 +88,9 @@ jobs:
         run: |
           # Install the specific pyschematron tool requested
           pip install pyschematron
+
+          # Verify installation
+          pyschematron --version
       - name: Validate XML files with Schematron
         run: |
 
