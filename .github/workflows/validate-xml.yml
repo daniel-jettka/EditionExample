@@ -91,17 +91,15 @@ jobs:
 
           # Test if pyschematron-0.1.0 is installed correctly by trying with Python
           run: |
-            python3 -c "
-            from pyschematron import validate_document
+            python3 -c "from pyschematron import validate_document
 
-            result = validate_document('build.xml', 'src/schema/mei-dc.sch')
+result = validate_document('build.xml', 'src/schema/mei-dc.sch')
 
-            svrl = result.get_svrl()
-            is_valid = result.is_valid()
+svrl = result.get_svrl()
+is_valid = result.is_valid()
 
-            print('Validation Result:', 'Valid' if is_valid else 'Invalid')
-            print('SVRL Output:', svrl)
-            "
+print('Validation Result:', 'Valid' if is_valid else 'Invalid')
+print('SVRL Output:', svrl)
           
 
       - name: Validate XML files with Schematron
