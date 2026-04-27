@@ -97,7 +97,7 @@ jobs:
           # list contents of submodules to verify they are checked out
           echo "Listing submodule contents for verification:"
           echo "Submodule 1 (mei-metadata-toolkit):"
-          ls -la mei-metadata-toolkit
+          ls -la 
 
 
           # Find your XML files and loop through them
