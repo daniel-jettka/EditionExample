@@ -17,9 +17,10 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout repository
+      - name: Checkout repository on ftr/metadata-validation-and-generation
         uses: actions/checkout@v6
         with:
+          ref: ftr/metadata-validation-and-generation
           submodules: 'recursive'
 
       - name: Find all .xml files and generate report
