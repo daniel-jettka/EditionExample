@@ -26,6 +26,7 @@ jobs:
 
       - name: Install Java and Saxon-HE
         run: |
+          REPORT="$REPORT_FILE"
           echo "Installing Java..."
           sudo apt-get update
           sudo apt-get install -y default-jre-headless
@@ -46,7 +47,10 @@ jobs:
           java -version
 
       - name: Find all XML files and extract Dublin Core metadata
+        env:
+          REPORT_FILE: ".github/workflow-reports/dublin-core-extraction.md"
         run: |
+          REPORT="$REPORT_FILE"
 
           find . -type f -name "*.xml" \
             ! -path "./.github/*" \
@@ -56,7 +60,22 @@ jobs:
             > xml_files.txt
 
           while IFS= read -r file; do
-            echo "Processing $file for Dublin Core extraction..."
+            echo "Processing $file for Dublin Core extraction..." >> "$REPORT"
             echo "java -jar $SAXON_JAR -o:$OUTPUT_DIR/$(basename $file .xml)-dc.xml -s:$file -xsl:pwd/mei-metadata-toolkit/src/xsl/mei2dc.xsl"
             java -jar "$SAXON_JAR" -o:"$OUTPUT_DIR/$(basename "$file" .xml)-dc.xml" -s:"$file" -xsl:"$(pwd)/mei-metadata-toolkit/src/xsl/mei2dc.xsl"
+            echo "Finished processing $file." >> "$REPORT"
+            echo "" >> "$REPORT"
           done < xml_files.txt
+
+          echo "Dublin Core extraction completed. Extracted metadata files are located in $OUTPUT_DIR." >> "$REPORT"
+
+          cat "$REPORT"
+
+
+
+      - name: Upload Validation Report as Artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: dublin-core-extraction-report
+          path: .github/workflow-reports/dublin-core-extraction.md
