@@ -90,8 +90,16 @@ jobs:
           pip install pyschematron
       - name: Validate XML files with Schematron
         run: |
-          # Read the list of XML files from the previous step
-          if [ -f /tmp/xml_files.txt ]; then
+
+          # 1. Create the output directory if it doesn't exist
+          mkdir -p .github/workflow-reports
+
+          # 2. Find all .xml files and write to a temporary list
+          # We use 'find' to get files, then 'sort' to make the list consistent
+          find . -type f -name "*.xml" | sort > /tmp/xml_files.txt
+
+          # 3. Check if any files were found
+          if [ -s /tmp/xml_files.txt ]; then
             while IFS= read -r file; do
               echo "Validating $file..."
               # Run Schematron validation
@@ -112,4 +120,4 @@ jobs:
             echo "Error details:"
             echo "$output"
           fi
-          
+
