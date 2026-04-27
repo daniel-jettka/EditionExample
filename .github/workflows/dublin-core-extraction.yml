@@ -60,5 +60,5 @@ jobs:
           while IFS= read -r file; do
             echo "Processing $file for Dublin Core extraction..."
             echo "java -jar $SAXON_JAR -o $OUTPUT_DIR/$(basename $file .xml)-dc.xml -s $file -xsl $STYLESHEET"
-            java -jar "$SAXON_JAR" -o "$OUTPUT_DIR/$(basename "$file" .xml)-dc.xml" -s "$file" -xsl "$STYLESHEET"
+            java -jar "$SAXON_JAR" -o:"$OUTPUT_DIR/$(basename "$file" .xml)-dc.xml" -s "$file" -xsl "$STYLESHEET"
           done < xml_files.txt
