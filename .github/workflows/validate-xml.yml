@@ -97,8 +97,9 @@ jobs:
           # list contents of submodules to verify they are checked out
           echo "Listing submodule contents for verification:"
           echo "Submodule 1 (mei-metadata-toolkit):"
-          ls -la 
-
+          # list contents of root recursively to verify submodules are checked out
+          echo "Listing root directory contents recursively:"
+          find . -type f | sort
 
           # Find your XML files and loop through them
           find . -type f -name "*.xml" | while read file; do
