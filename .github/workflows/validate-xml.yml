@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
 
       - name: Find all .xml files and generate report
         run: |
@@ -91,8 +93,11 @@ jobs:
 
       - name: Validate XML against Schematron
         run: |
+          # get path to the Python script in the submodule
+          echo "PYTHON_SCRIPT_PATH=$(pwd)/mei-metadata-toolkit/src/python/validate.py" >> $GITHUB_ENV
+
           # Find your XML files and loop through them
           find . -type f -name "*.xml" | while read file; do
             echo "Validating $file against MEI-DC Schematron..."
-            python ../mei-metadata-toolkit/src/python/validate.py "$file" "mei-metadata-toolkit/src/schema/mei-dc.sch"
+            python "$PYTHON_SCRIPT_PATH" "$file" "mei-metadata-toolkit/src/schema/mei-dc.sch"
           done
