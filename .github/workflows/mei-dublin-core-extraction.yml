@@ -19,10 +19,11 @@ jobs:
           ref: ftr/metadata-validation-and-generation
           submodules: 'recursive' 
 
-      - name: Create necessary directories
+      - name: Create necessary files and directories
         run: |
           echo "OUTPUT_DIR=$(pwd)/metadata/dc" >> $GITHUB_ENV
           mkdir -p metadata/dc
+          touch .github/workflow-reports/mei-dublin-core-extraction.md
 
       - name: Install Java and Saxon-HE
         run: |
