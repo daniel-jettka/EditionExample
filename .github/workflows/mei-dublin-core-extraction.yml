@@ -67,14 +67,14 @@ jobs:
             output_file="$OUTPUT_DIR/$(basename "$file" .xml)-dc.xml"
 
             if [ -f "$output_file" ]; then
-              if [ -s "$output_file" ] && ! grep -q '^<\?xml version="1.0" encoding="UTF-8"\?>$' "$output_file"; then
-                echo "Successfully extracted Dublin Core metadata to $output_file" >> "$REPORT"
+              if grep -q "<oai_dc:dc" "$output_file"; then
+                echo "Dublin Core metadata extracted successfully to $output_file" >> "$REPORT"
               else
-                echo "Warning: Output file $output_file is empty or only contains XML declaration. No meaningful metadata extracted." >> "$REPORT"
-                rm -f "$output_file"
+                echo "No Dublin Core metadata found in $file. Removing empty output file." >> "$REPORT"
+                rm "$output_file"
               fi
             else
-              echo "Error: Expected output file $output_file was not created." >> "$REPORT"
+              echo "Failed to create output file for $file" >> "$REPORT"
             fi
 
             echo "" >> "$REPORT"
