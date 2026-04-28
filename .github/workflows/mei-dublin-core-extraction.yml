@@ -19,11 +19,11 @@ jobs:
           ref: ftr/metadata-validation-and-generation
           submodules: 'recursive' 
 
-      - name: Create necessary files and directories
+      - name: Create necessary directories
         run: |
           echo "OUTPUT_DIR=$(pwd)/metadata/dc" >> $GITHUB_ENV
           mkdir -p metadata/dc
-          touch .github/workflow-reports/mei-dublin-core-extraction.md
+          mkdir -p .github/workflow-reports
 
       - name: Install Java and Saxon-HE
         run: |
@@ -89,7 +89,7 @@ jobs:
 
       - name: Upload Validation Report as Artifact
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: dublin-core-extraction-report
           path: .github/workflow-reports/mei-dublin-core-extraction.md
