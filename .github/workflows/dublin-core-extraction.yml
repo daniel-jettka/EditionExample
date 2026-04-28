@@ -72,10 +72,10 @@ jobs:
           cat "$REPORT"
 
 
-
       - name: Upload Validation Report as Artifact
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: dublin-core-extraction-report
           path: .github/workflow-reports/dublin-core-extraction.md
+        
