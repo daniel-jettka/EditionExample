@@ -1,4 +1,4 @@
-name: Schematron Validation (MEI DC)
+name: Validation of Dublin Core compliance for MEI Files
 
 on:
   push:
