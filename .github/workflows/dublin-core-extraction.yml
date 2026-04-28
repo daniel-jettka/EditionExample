@@ -74,8 +74,19 @@ jobs:
 
       - name: Upload Validation Report as Artifact
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: dublin-core-extraction-report
           path: .github/workflow-reports/dublin-core-extraction.md
+
+
+      - name: Commit and Push
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .github/workflow-reports/dublin-core-extraction.md
+          git add metadata/dc/*.xml
+          git commit -m "Update Dublin Core extraction report" || echo "No changes to commit"
+          git push
+          # Note: The 'git push' step will fail in Pull Request workflows unless you use a specific token
         
