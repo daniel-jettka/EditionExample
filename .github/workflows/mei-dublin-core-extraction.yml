@@ -48,7 +48,7 @@ jobs:
 
       - name: Find all XML files and extract Dublin Core metadata
         env:
-          REPORT_FILE: ".github/workflow-reports/dublin-core-extraction.md"
+          REPORT_FILE: ".github/workflow-reports/mei-dublin-core-extraction.md"
         run: |
           REPORT="$REPORT_FILE"
 
