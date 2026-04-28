@@ -26,7 +26,7 @@ jobs:
 
       - name: Install Java and Saxon-HE
         run: |
-          REPORT="$REPORT_FILE"
+          echo "REPORT_FILE=.github/workflow-reports/mei-dublin-core-extraction.md" >> $GITHUB_ENV
           echo "Installing Java..."
           sudo apt-get update
           sudo apt-get install -y default-jre-headless
@@ -47,10 +47,7 @@ jobs:
           java -version
 
       - name: Find all XML files and extract Dublin Core metadata
-        env:
-          REPORT_FILE: ".github/workflow-reports/mei-dublin-core-extraction.md"
         run: |
-          REPORT="$REPORT_FILE"
 
           find . -type f -name "*.xml" \
             ! -path "./.github/*" \
@@ -61,29 +58,29 @@ jobs:
 
           while IFS= read -r file; do
 
-            echo "Processing $file for Dublin Core extraction..." >> "$REPORT"
+            echo "Processing $file for Dublin Core extraction..." >> "$REPORT_FILE"
             java -jar "$SAXON_JAR" -o:"$OUTPUT_DIR/$(basename "$file" .xml)-dc.xml" -s:"$file" -xsl:"$(pwd)/mei-metadata-toolkit/src/xsl/mei2dc.xsl"
 
             output_file="$OUTPUT_DIR/$(basename "$file" .xml)-dc.xml"
 
             if [ -f "$output_file" ]; then
               if grep -q "<oai_dc:dc" "$output_file"; then
-                echo "Dublin Core metadata extracted successfully to $output_file" >> "$REPORT"
+                echo "Dublin Core metadata extracted successfully to $output_file" >> "$REPORT_FILE"
               else
-                echo "No Dublin Core metadata found in $file. Removing empty output file." >> "$REPORT"
+                echo "No Dublin Core metadata found in $file. Removing empty output file." >> "$REPORT_FILE"
                 rm "$output_file"
               fi
             else
-              echo "Failed to create output file for $file" >> "$REPORT"
+              echo "Failed to create output file for $file" >> "$REPORT_FILE"
             fi
 
-            echo "" >> "$REPORT"
-            
+            echo "" >> "$REPORT_FILE"
+
           done < xml_files.txt
 
-          echo "Dublin Core extraction completed. Extracted metadata files are located in $OUTPUT_DIR." >> "$REPORT"
+          echo "Dublin Core extraction completed. Extracted metadata files are located in $OUTPUT_DIR." >> "$REPORT_FILE"
 
-          cat "$REPORT"
+          cat "$REPORT_FILE"
 
 
       - name: Upload Validation Report as Artifact
@@ -91,14 +88,14 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: dublin-core-extraction-report
-          path: .github/workflow-reports/dublin-core-extraction.md
+          path: ${REPORT_FILE}
 
 
       - name: Commit and Push
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add .github/workflow-reports/dublin-core-extraction.md
+          git add $REPORT_FILE
           git add metadata/dc/*.xml
           git commit -m "Update Dublin Core extraction report" || echo "No changes to commit"
           git push
