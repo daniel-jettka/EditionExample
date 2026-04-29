@@ -62,16 +62,20 @@ jobs:
         run: |
           REPORT="$REPORT_FILE"
 
+          # Initialize the report
+          echo "### Dublin Core Extraction Report" > "$REPORT"
+          echo "Branch: ${{ github.ref_name }}" >> "$REPORT"
+          echo "Generated: $(date)" >> "$REPORT"
+          echo "" >> "$REPORT"
+          echo "Found $(wc -l < xml_files.txt) XML files to process." >> "$REPORT"
+          echo "" >> "$REPORT"
+
           find . -type f -name "*.xml" \
             ! -path "./.github/*" \
             ! -path "./vendor/*" \
             ! -path "./.git/*" \
             ! -name "*.xml.bak" \
             > xml_files.txt
-
-          # write date and time to report
-          echo "Dublin Core metadata extraction started at $(date)" >> "$REPORT"
-          echo "Found $(wc -l < xml_files.txt) XML files to process." >> "$REPORT"
 
           while IFS= read -r file; do
 
