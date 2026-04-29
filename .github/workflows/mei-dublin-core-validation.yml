@@ -9,6 +9,7 @@ on:
     branches: 
       - ftr/metadata-validation-and-generation
       - main
+  workflow_dispatch:
 
 jobs:
   validate-schematron:
@@ -27,7 +28,7 @@ jobs:
           ref: main
           path: mei-metadata-toolkit
 
-      - name: Create Report Directory
+      - name: Create necessary directories
         run: |
           mkdir -p .github/workflow-reports
 
