@@ -66,9 +66,12 @@ jobs:
             ! -name "*.xml.bak" \
             > xml_files.txt
 
+          # write date and time to report
+          echo "Dublin Core metadata extraction started at $(date)" >> "$REPORT"
+          echo "Found $(wc -l < xml_files.txt) XML files to process." >> "$REPORT"
+
           while IFS= read -r file; do
 
-            echo "Processing $file for Dublin Core extraction..." >> "$REPORT"
             java -jar "$SAXON_JAR" -o:"$OUTPUT_DIR/$(basename "$file" .xml)-dc.xml" -s:"$file" -xsl:"$(pwd)/mei-metadata-toolkit/src/xsl/mei2dc.xsl"
 
             output_file="$OUTPUT_DIR/$(basename "$file" .xml)-dc.xml"
@@ -77,7 +80,7 @@ jobs:
               if grep -q "<oai_dc:dc" "$output_file"; then
                 echo "Dublin Core metadata extracted successfully to $output_file" >> "$REPORT"
               else
-                echo "No Dublin Core metadata found in $file. Removing empty output file." >> "$REPORT"
+                echo "No Dublin Core metadata found in $file." >> "$REPORT"
                 rm "$output_file"
               fi
             else
